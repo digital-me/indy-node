@@ -25,6 +25,7 @@ function build_from_pypi {
         --verbose \
         --python-package-name-prefix "python35u"\
         --python-bin "/usr/bin/python3.5" \
+        --python-easyinstall "/usr/bin/easy_install-3.5" \
         --exclude "*.pyc" \
         --exclude "*.pyo" \
         --maintainer "Hyperledger <hyperledger-indy@lists.hyperledger.org>" \
