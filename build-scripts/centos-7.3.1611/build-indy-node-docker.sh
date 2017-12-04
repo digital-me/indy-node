@@ -11,10 +11,10 @@ if [[ (-z "${PKG_SOURCE_PATH}") || (-z "${VERSION}") ]]; then
     exit 1;
 fi
 
-if [ -z "$3" ]; then
+if [ -z "$4" ]; then
     CMD="/root/build-${PKG_NAME}.sh /input ${VERSION} /output"
 else
-    CMD="$3"
+    CMD="$4"
 fi
 
 docker build -t "${IMAGE_NAME}" -f Dockerfile .
