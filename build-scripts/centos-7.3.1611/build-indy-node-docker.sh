@@ -3,11 +3,11 @@
 PKG_SOURCE_PATH="$1"
 VERSION="$2"
 PKG_NAME=indy-node
-IMAGE_NAME="${PKG_NAME}-build-u1604"
-OUTPUT_VOLUME_NAME="${PKG_NAME}-deb-u1604"
+IMAGE_NAME="${PKG_NAME}-build-c7.3.1611"
+OUTPUT_VOLUME_NAME="${3:-"${PKG_NAME}-rpm-c7.3.1611"}"
 
 if [[ (-z "${PKG_SOURCE_PATH}") || (-z "${VERSION}") ]]; then
-    echo "Usage: $0 <path-to-package-sources> <version>"
+    echo "Usage: $0 <path-to-package-sources> <version> <volume>"
     exit 1;
 fi
 

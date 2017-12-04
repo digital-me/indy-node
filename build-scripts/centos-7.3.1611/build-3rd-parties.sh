@@ -21,11 +21,10 @@ function build_from_pypi {
     sed -i "s/{package_name}/python3-${PACKAGE_NAME}/" "${PREREM_TMP}"
 
     fpm --input-type "python" \
-        --output-type "deb" \
-        --architecture "amd64" \
+        --output-type "rpm" \
         --verbose \
-        --python-package-name-prefix "python3"\
-        --python-bin "/usr/bin/python3" \
+        --python-package-name-prefix "python35u"\
+        --python-bin "/usr/bin/python35" \
         --exclude "*.pyc" \
         --exclude "*.pyo" \
         --maintainer "Hyperledger <hyperledger-indy@lists.hyperledger.org>" \
