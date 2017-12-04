@@ -18,7 +18,7 @@ RUN gem install --no-ri --no-rdoc fpm
 
 # add PIUS repo for Python 3.5
 RUN yum -y install https://centos7.iuscommunity.org/ius-release.rpm \
- && yum -y install python35u-pip python35u-tools python35u-setuptools
+ && yum -y install python35u-pip python35u-tools python35u-setuptools python35u-libs
 
 WORKDIR /root
 
