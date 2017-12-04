@@ -21,7 +21,7 @@ fpm --input-type "python" \
     --output-type "rpm" \
     --verbose \
     --python-package-name-prefix "python35u" \
-    --python-bin "/usr/bin/python35" \
+    --python-bin "/usr/bin/python3.5" \
     --exclude "*.pyc" \
     --exclude "*.pyo" \
     --depends at \
