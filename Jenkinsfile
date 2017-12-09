@@ -1,7 +1,36 @@
 #!groovy
 
-@Library('SovrinHelpers') _
+// Load Jenkins shared libraries for all Hypeledger Indy project
 
+def libIndy =[
+	remote: 'https://github.com/digital-me/indy-jenkins-lib.git',
+	branch: 'draft-01',
+	credentialsId: null,
+]
+
+try {
+	echo 'Trying to load shared libraries...' 
+	library identifier: "libIndy@${libIndy.branch}", retriever: modernSCM(
+		[$class: 'GitSCMSource',
+			remote: libIndy.remote,
+			credentialsId: libIndy.credentialsId]
+	)
+	echo 'Shared library loaded'
+} catch (error) {
+	echo "Could not load shared libraries: ${error.message}"
+    currentBuild.result = 'FAILURE'
+    return
+}
+
+// Initialize configuration
+def config = initConfig()
+if (!config) {
+	// Fail config is empty
+    currentBuild.result = 'FAILURE'
+    return
+}
+
+// Define custom name, closures and methods for this project
 def name = 'indy-node'
 
 def nodeTestUbuntu = {
@@ -102,7 +131,10 @@ def buildRpmCentos = { repoName, releaseVersion, sourcePath ->
     return "$volumeName"
 }
 
-options = new TestAndPublishOptions()
-options.enable([StagesEnum.PACK_RELEASE_COPY, StagesEnum.PACK_RELEASE_COPY_ST])
-options.setCopyWithDeps(true)
-testAndPublish(name, [ubuntu: [node: nodeTestUbuntu, client: clientTestUbuntu, common: commonTestUbuntu]], true, options, [ubuntu: buildDebUbuntu, centos: buildRpmCentos])
+// PIPELINE
+stageCompile(name)
+stageTest(name, [ubuntu: [node: nodeTestUbuntu, client: clientTestUbuntu, common: commonTestUbuntu]])
+stagePackage(name, [ubuntu: buildDebUbuntu, centos: buildRpmCentos])
+stageRelease(name)
+stageDelivery(name)
+stageNotify(name)
