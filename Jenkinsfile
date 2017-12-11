@@ -1,38 +1,26 @@
 #!groovy
 
-// Load Jenkins shared libraries for all Hypeledger Indy project
-
-def libIndy =[
-	remote: 'https://github.com/digital-me/indy-jenkins-lib.git',
-	branch: 'draft-01',
-	credentialsId: null,
+// Load Jenkins shared libraries common to all projects
+def libCmn = [
+	remote:			'https://github.com/digital-me/indy-jenkins-lib.git',
+	branch:			'draft-01',
+	credentialsId:	null,
 ]
 
-try {
-	echo 'Trying to load shared libraries...' 
-	library identifier: "libIndy@${libIndy.branch}", retriever: modernSCM(
-		[$class: 'GitSCMSource',
-			remote: libIndy.remote,
-			credentialsId: libIndy.credentialsId]
-	)
-	echo 'Shared library loaded'
-} catch (error) {
-	echo "Could not load shared libraries: ${error.message}"
-    currentBuild.result = 'FAILURE'
-    return
-}
+library(
+	identifier: "libCmn@${libCmn.branch}",
+	retriever: modernSCM([
+		$class: 'GitSCMSource',
+		remote: libCmn.remote,
+		credentialsId: libCmn.credentialsId
+	])
+)
 
 // Initialize configuration
-def config = initConfig()
-if (!config) {
-	// Fail config is empty
-    currentBuild.result = 'FAILURE'
-    return
-}
-
-// Define custom name, closures and methods for this project
 def name = 'indy-node'
+def config = initConfig(name)
 
+// Define custom test and packaging tasks for this project (closures)
 def nodeTestUbuntu = {
     try {
         echo 'Ubuntu Test: Checkout csm'
@@ -131,10 +119,15 @@ def buildRpmCentos = { repoName, releaseVersion, sourcePath ->
     return "$volumeName"
 }
 
-// PIPELINE
-stageCompile(name)
-stageTest(name, [ubuntu: [node: nodeTestUbuntu, client: clientTestUbuntu, common: commonTestUbuntu]])
-stagePackage(name, [ubuntu: buildDebUbuntu, centos: buildRpmCentos])
-stageRelease(name)
-stageDelivery(name)
-stageNotify(name)
+// CI Pipeline - as long as the common library can be loaded
+stValidate(config)
+stTest(config, [ubuntu: [node: nodeTestUbuntu, client: clientTestUbuntu, common: commonTestUbuntu]])
+stPackage(config, [ubuntu: buildDebUbuntu, centos: buildRpmCentos])
+
+// CD Pipeline - only if extended library can be loaded
+if (config.extended) {
+	stApprove(config)
+	stRelease(config)
+	stDeliver(config)
+	stNotify(config)
+}
