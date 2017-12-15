@@ -119,6 +119,11 @@ def buildRpmCentos = { repoName, releaseVersion, sourcePath ->
     return "$volumeName"
 }
 
+// Auto-merge PR - only if extended library can be loaded
+if (config.extended) {
+	stMerge(config)
+}
+
 // CI Pipeline - as long as the common library can be loaded
 stValidate(config)
 stTest(config, [ubuntu: [node: nodeTestUbuntu, client: clientTestUbuntu, common: commonTestUbuntu]])
