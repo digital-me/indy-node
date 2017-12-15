@@ -126,8 +126,8 @@ if (config.extended) {
 
 // CI Pipeline - as long as the common library can be loaded
 stValidate(config)
-stTest(config, [ubuntu: [node: nodeTestUbuntu, client: clientTestUbuntu, common: commonTestUbuntu]])
-stPackage(config, [ubuntu: buildDebUbuntu, centos: buildRpmCentos])
+stTest(config, ['ubuntu-16': ['node': nodeTestUbuntu, 'client': clientTestUbuntu, 'common': commonTestUbuntu]])
+stPackage(config, ['ubuntu-16': buildDebUbuntu, 'centos-7': buildRpmCentos])
 
 // CD Pipeline - only if extended library can be loaded
 if (config.extended) {
