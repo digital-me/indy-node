@@ -1,93 +1,49 @@
 #!groovy
 
-@Library('SovrinHelpers') _
+// Load Jenkins shared library common to all projects
+def libCmn = [
+	remote:		'https://github.com/digital-me/jenkins-lib-lazy.git',
+	branch:		'devel',
+	credentialsId:	null,
+]
 
-def name = 'indy-node'
+// Load mandatory common shared library
+echo 'Trying to load common library...'
+library(
+	identifier: "libCmn@${libCmn.branch}",
+	retriever: modernSCM([
+		$class: 'GitSCMSource',
+		remote: libCmn.remote,
+		credentialsId: libCmn.credentialsId
+	])
+)
+echo 'Common shared library loaded'
 
-def nodeTestUbuntu = {
-    try {
-        echo 'Ubuntu Test: Checkout csm'
-        checkout scm
+// Initialize configuration
+def config = initConfig('indy-node')
 
-        echo 'Ubuntu Test: Build docker image'
-        def testEnv = dockerHelpers.build(name)
+// CI Pipeline - as long as the common library can be loaded
 
-        testEnv.inside('--network host') {
-            echo 'Ubuntu Test: Install dependencies'
-            testHelpers.install()
+// Validate the code
+stageDockerPar(
+	'validate',
+	config,
+)
 
-            echo 'Ubuntu Test: Test'
-            testHelpers.testRunner([resFile: "test-result-node.${NODE_NAME}.txt", testDir: 'indy_node'])
-            //testHelpers.testJUnit(resFile: "test-result-node.${NODE_NAME}.xml")
-        }
-    }
-    finally {
-        echo 'Ubuntu Test: Cleanup'
-        step([$class: 'WsCleanup'])
-    }
-}
+// Test the code
+stageDockerPar(
+	'test',
+	config,
+	'--network host',
+)
 
-def clientTestUbuntu = {
-    try {
-        echo 'Ubuntu Test: Checkout csm'
-        checkout scm
-
-        echo 'Ubuntu Test: Build docker image'
-        def testEnv = dockerHelpers.build(name)
-
-        testEnv.inside('--network host') {
-            echo 'Ubuntu Test: Install dependencies'
-            testHelpers.install()
-
-            echo 'Ubuntu Test: Test'
-            testHelpers.testRunner([resFile: "test-result-client.${NODE_NAME}.txt", testDir: 'indy_client'])
-            //testHelpers.testJUnit(resFile: "test-result-client.${NODE_NAME}.xml")
-        }
-    }
-    finally {
-        echo 'Ubuntu Test: Cleanup'
-        step([$class: 'WsCleanup'])
-    }
-}
-
-def commonTestUbuntu = {
-    try {
-        echo 'Ubuntu Test: Checkout csm'
-        checkout scm
-
-        echo 'Ubuntu Test: Build docker image'
-        def testEnv = dockerHelpers.build(name)
-
-        testEnv.inside {
-            echo 'Ubuntu Test: Install dependencies'
-            testHelpers.install()
-
-            echo 'Ubuntu Test: Test'
-            testHelpers.testJUnit([resFile: "test-result-common.${NODE_NAME}.xml", testDir: 'indy_common'])
-        }
-    }
-    finally {
-        echo 'Ubuntu Test: Cleanup'
-        step([$class: 'WsCleanup'])
-    }
-}
-
-def buildDebUbuntu = { repoName, releaseVersion, sourcePath ->
-    def volumeName = "$name-deb-u1604"
-    if (env.BRANCH_NAME != '' && env.BRANCH_NAME != 'master') {
-        volumeName = "${volumeName}.${BRANCH_NAME}"
-    }
-    if (sh(script: "docker volume ls -q | grep -q '^$volumeName\$'", returnStatus: true) == 0) {
-        sh "docker volume rm $volumeName"
-    }
-    dir('build-scripts/ubuntu-1604') {
-        sh "./build-$name-docker.sh \"$sourcePath\" $releaseVersion $volumeName"
-        sh "./build-3rd-parties-docker.sh $volumeName"
-    }
-    return "$volumeName"
-}
-
-options = new TestAndPublishOptions()
-options.enable([StagesEnum.PACK_RELEASE_COPY, StagesEnum.PACK_RELEASE_COPY_ST])
-options.setCopyWithDeps(true)
-testAndPublish(name, [ubuntu: [node: nodeTestUbuntu, client: clientTestUbuntu, common: commonTestUbuntu]], true, options, [ubuntu: buildDebUbuntu])
+// Package the code
+stageDockerPar(
+	'package',
+	config,
+	'',
+	[
+		'build-indy-node.sh',
+		'build-3rd-parties.sh',
+	]
+)
